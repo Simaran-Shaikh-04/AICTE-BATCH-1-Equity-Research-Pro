@@ -82,22 +82,27 @@ This tool fixes all four problems in one platform.
 ### 1. Three-Year PDF Annual Report Extraction
 Upload annual reports for FY2023, FY2024, and FY2025 simultaneously with a Consolidated/Standalone toggle. Gemini 2.5 Flash extracts 20–25 financial data points per year — every number is linked to its exact page in the source PDF.
 
-### 2. Twelve Sector-Specific Ratio Engines
+### 2. Seventeen Sector-Specific Ratio Engines
 
 | Sector | Key Metrics |
 |--------|------------|
-| Banking | NIM, GNPA %, Net NPA %, CAR %, CFO/PAT |
-| NBFC | NIM, GNPA, CAR, Leverage Ratio |
-| IT | EBITDA Margin, FCF, Revenue Growth, Utilization |
-| Pharma | EBITDA Margin, R&D %, PAT Margin, Debt/Equity |
-| FMCG | EBITDA Margin, Asset Turnover, Working Capital |
-| Auto | EBITDA Margin, Inventory Days, Capex/Revenue |
-| Metal | EBITDA Margin, EV/EBITDA, Debt/Equity |
-| Infrastructure | EBITDA, Order Book, Debt/Equity |
-| Energy | EBITDA, Capex, D/E Ratio |
-| Real Estate | Pre-sales, Collections, Net Debt |
-| Telecom | EBITDA, ARPU, Capex |
-| General | Standard ratios for diversified companies |
+| Banking | NIM, Gross NPA %, Net NPA %, CAR %, ROE, CFO/PAT |
+| NBFC | NIM, Gross NPA %, Net NPA %, CAR %, Cost of Funds %, ROAA %, AUM |
+| Insurance | Solvency Ratio, Combined Ratio % (General), Claims Ratio % (General), VNB Margin % (Life), 13M Persistency % (Life) |
+| IT | EBITDA Margin, Attrition Rate %, Revenue/Employee, ROE |
+| Pharma | EBITDA Margin, R&D/Revenue %, FDA Warning Letters, Specialty/Revenue % |
+| FMCG | EBITDA Margin, Inventory Days, DSO (Days), ROE, ROCE |
+| ConsumerDurables | EBITDA Margin, Inventory Days, DSO (Days), ROE |
+| Auto | EBITDA Margin, Operating Margin %, EBITDA per unit, Inventory Days, DSO (Days) |
+| CapitalGoods | EBITDA Margin, Inventory Days, DSO (Days), Order Book |
+| Metal | EBITDA Margin, Capacity Utilization %, Inventory Days, DSO (Days) |
+| Chemicals | EBITDA Margin, Capacity Utilization %, R&D/Revenue % |
+| Infrastructure | EBITDA Margin, Order Book/Revenue, Interest Coverage, CWIP/Total Assets % |
+| Energy | EBITDA Margin, Capex, D/E Ratio |
+| Power | Plant Load Factor % (PLF), Plant Availability %, Regulated RoE %, Receivable Days |
+| Real Estate | Pre-sales, Collections/Pre-sales %, Net Debt/Equity, Embedded EBITDA Margin % |
+| Ports | Capacity Utilisation %, port EBITDA margin %, Net Debt/EBITDA, Realisation/Tonne |
+| General | EBITDA Margin, Net Profit Margin, Debt/Equity, ROE, ROCE |
 
 ### 3. MD&A Intelligence + NarrativeDiff Engine
 Extracts Management Discussion & Analysis sections across 3 years — Business Overview, Highlights, Risks, Opportunities, Key Audit Matters, Accounting Policy Changes. The **NarrativeDiff engine** compares text year-over-year at the sentence level:
