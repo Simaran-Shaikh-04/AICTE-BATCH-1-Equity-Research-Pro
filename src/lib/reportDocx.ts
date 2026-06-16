@@ -105,11 +105,14 @@ export async function downloadReportDocx(data: ScoredData[]): Promise<void> {
   // ── Key financials ───────────────────────────────────────────────────────────
   children.push(heading('Key Financials (₹ Crores unless noted)'));
   const isFin = latest.sector === 'Banking' || latest.sector === 'NBFC' || latest.sector === 'Insurance';
+  const isBankOrNbfc = latest.sector === 'Banking' || latest.sector === 'NBFC';
   const finRows: string[][] = [
-    ['Revenue / Total Income', ...data.map(d => fmtCr(d.revenue))],
+    [isBankOrNbfc ? 'Total Income' : 'Revenue / Total Income', ...data.map(d => fmtCr(d.revenue))],
+    ...(isBankOrNbfc && data.some(d => d.interestIncome != null) ? [['Interest Earned (Revenue)', ...data.map(d => fmtCr(d.interestIncome))]] : []),
     ...(isFin ? [] : [['EBITDA', ...data.map(d => fmtCr(d.ebitda))]]),
     ['Profit After Tax', ...data.map(d => fmtCr(d.pat))],
     ['Net Worth', ...data.map(d => fmtCr(d.netWorth))],
+    ['Current Liabilities', ...data.map(d => fmtCr(d.currentLiabilities))],
     ['Total Debt', ...data.map(d => fmtCr(d.totalDebt))],
     ['Cash & Equivalents', ...data.map(d => fmtCr(d.cashEquivalents))],
     ['Operating Cash Flow', ...data.map(d => fmtCr(d.operatingCashFlow))],
@@ -197,6 +200,23 @@ export async function downloadReportDocx(data: ScoredData[]): Promise<void> {
       ['Auditor Fees', fmtCr(latest.auditorFees)],
     ],
   ));
+
+  // ── Methodology Notes ────────────────────────────────────────────────────────
+  children.push(heading('Methodology & Alignment Notes'));
+  children.push(paragraph({
+    children: [
+      new TextRun({ text: "• PAT: ", bold: true }),
+      new TextRun("Attributable to parent shareholders. Differs from Screener consolidated PAT (which includes minority interests) by ~4–6%.\n"),
+      new TextRun({ text: "• Net Worth: ", bold: true }),
+      new TextRun("Represents Share Capital + Reserves & Surplus attributable to parent. Differences from Screener can exist due to minority interest or revaluation reserves.\n"),
+      isBankOrNbfc ? new TextRun({ text: "• Total Income vs. Revenue: ", bold: true }) : new TextRun(""),
+      isBankOrNbfc ? new TextRun("Total Income includes other income, whereas Screener's Revenue row is narrower (typically Interest Earned only).\n") : new TextRun(""),
+      new TextRun({ text: "• EPS: ", bold: true }),
+      new TextRun("Basic consolidated EPS as printed in the annual reports. May differ from Screener due to stock splits, face value, or post-merger share count changes.\n"),
+      new TextRun({ text: "• Fiscal Year: ", bold: true }),
+      new TextRun("Annual reports use March-ending fiscal years (e.g. FY2024 ends March 31, 2024). Some database tools may show a one-year label offset.\n"),
+    ],
+  }));
 
   // ── Qualitative narrative (latest year) ────────────────────────────────────────
   const qual: [string, keyof ScoredData][] = [

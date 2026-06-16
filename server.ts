@@ -70,15 +70,15 @@ NBFC SECTOR RULES:
       return `
 IT SECTOR RULES (Infosys/Wipro/HCL = IFRS):
 - revenue: Revenue from IT Services / Operations (exclude Other Income).
-- ebitda: Operating Profit + D&A.
-- employeeCount: year-end headcount, RAW INTEGER.
+- ebitda: Operating Profit before Depreciation and Amortisation. This MUST be computed as Revenue minus Operating Expenses (excluding D&A and finance costs). If the report shows Operating Profit (EBIT) after Depreciation, you MUST add back Depreciation & Amortisation to arrive at EBITDA (e.g., EBITDA = EBIT + Depreciation). Do NOT report EBIT as EBITDA.
+- employeeCount: year-end employee headcount (number of people employed), RAW INTEGER. DO NOT extract ESOP/options share counts (e.g., ~40L shares) as headcount. Look for "headcount" or "number of employees" in the MD&A or Board's Report.
 - attritionRate: LTM voluntary attrition %.
 - totalDebt: borrowings + IFRS-16 lease liabilities (note lease portion in kams).`;
     case "Pharma":
       return `
 PHARMA SECTOR RULES:
 - revenue: Revenue from Operations.
-- ebitda: OPERATING PROFIT = Revenue from Operations − total operating expenses (cost of materials + employee + other expenses), BEFORE depreciation & amortisation, finance costs and tax, and EXCLUDING other income. DO NOT use "Profit before tax" or "Profit before exceptional items and tax" — those are PBT, not EBITDA (this is a known, recurring mis-extraction). If the P&L does not print an EBITDA/Operating Profit line, compute it as Revenue − (Total expenses − Finance costs − Depreciation & amortisation).
+- ebitda: Operating Profit before Depreciation and Amortisation. This MUST be computed as Revenue from Operations minus Operating Expenses (excluding D&A and finance costs). If the report shows Operating Profit (EBIT) after Depreciation, you MUST add back Depreciation & Amortisation to arrive at EBITDA (e.g., EBITDA = EBIT + Depreciation). Do NOT report EBIT as EBITDA.
 - rdExpense: REVENUE R&D (expensed only); if capitalised note in kams; null if not disclosed.
 - specialtyRevenue: specialty/innovative revenue if disclosed (₹ Crores).
 - fdaWarningLetters: count of ACTIVE US FDA warning letters (integer).
@@ -230,6 +230,7 @@ function commonProperties(): Record<string, any> {
     faceValuePerShare:        { type: Type.NUMBER },
     grossProfit:              { type: Type.NUMBER },
     totalAssets:              { type: Type.NUMBER },
+    currentLiabilities:       { type: Type.NUMBER },
     tradeReceivables:         { type: Type.NUMBER },
     inventories:              { type: Type.NUMBER },
     capex:                    { type: Type.NUMBER },
@@ -367,20 +368,30 @@ async function maybeTrimPdf(base64Clean: string): Promise<{ data: string; trimme
     const total: number = doc.numPages;
     if (total <= TRIM_PAGE_THRESHOLD) return { data: base64Clean, trimmed: false, pageOffset: 0 };
 
-    const scanStart = Math.floor(total * 0.30);
+    const scanStart = Math.min(20, Math.floor(total * 0.10));
     let consolIdx = -1, auditIdx = -1;
     for (let p = scanStart; p <= total; p++) {
       const page = await doc.getPage(p);
       const tc = await page.getTextContent();
       const text = tc.items.map((it: any) => it.str || "").join(" ").toUpperCase();
-      if (consolIdx === -1 && text.includes("CONSOLIDATED BALANCE SHEET")) consolIdx = p - 1;
-      if (auditIdx === -1 && text.includes("INDEPENDENT AUDITOR")) auditIdx = p - 1;
+      
+      const hasConsolidatedWord = text.includes("CONSOLIDATED");
+      const hasBalanceSheetWord = text.includes("BALANCE SHEET") || text.includes("STATEMENT OF ASSETS AND LIABILITIES") || text.includes("STATEMENT OF FINANCIAL POSITION");
+      
+      if (consolIdx === -1 && hasConsolidatedWord && hasBalanceSheetWord) {
+        consolIdx = p - 1;
+      }
+      
+      if (auditIdx === -1 && (text.includes("INDEPENDENT AUDITOR") || text.includes("AUDITOR'S REPORT") || text.includes("AUDITORS' REPORT"))) {
+        auditIdx = p - 1;
+      }
+      
       if (consolIdx !== -1 && auditIdx !== -1) break;
     }
     if (consolIdx === -1) return { data: base64Clean, trimmed: false, pageOffset: 0 };
 
     const lo = Math.max(0, Math.min(consolIdx, auditIdx === -1 ? consolIdx : auditIdx) - 6);
-    const hi = Math.min(total - 1, consolIdx + 170);
+    const hi = Math.min(total - 1, consolIdx + 260);
     const src = await PDFDocument.load(buf, { ignoreEncryption: true });
     const out = await PDFDocument.create();
     const indices: number[] = [];
@@ -439,8 +450,13 @@ DO NOT search the P&L for a line "labelled" EBITDA. Many Indian reports do not p
     (iii) Finance costs / Interest expense (a sub-line inside Total expenses)
     (iv)  Depreciation, amortisation and impairment (a sub-line inside Total expenses)
 
-  STEP B — COMPUTE: ebitda = (i) − ( (ii) − (iii) − (iv) )
-    This is Revenue minus operating expenses, which excludes interest & D&A by construction.
+  STEP B — COMPUTE:
+    First, check if (iii) Finance costs and (iv) Depreciation & amortisation are listed as sub-items inside (ii) Total expenses.
+    - If they are included inside (ii) Total expenses:
+      ebitda = (i) − ( (ii) − (iii) − (iv) )
+    - If they are NOT included inside (ii) Total expenses:
+      ebitda = (i) − (ii)
+    This ensures we compute operating profit before D&A and interest, without double-subtraction.
 
   STEP C — SANITY CHECK (mandatory): your computed ebitda MUST satisfy:
     ebitda > PBT  AND  ebitda > PAT
@@ -502,9 +518,21 @@ CRITICAL RULE 5 — RELATED PARTY & CONTINGENT DETAIL: From the "Related Party D
 SECTOR-SPECIFIC RULES:
 ${getSectorGuidance(sector)}
 
-STANDARD MAPPINGS: pat = PAT attributable to owners (consolidated); totalDebt = short+long-term borrowings + current portion (see sector rules); netWorth = equity attributable to owners (exclude minority interest); auditorOpinion EXACTLY one of "Clean","Qualified","Adverse","Disclaimer". Keep qualitative fields concise.
+STANDARD MAPPINGS: 
+- pat: Profit After Tax attributable to owners of the parent (consolidated), in ₹ Crores.
+- totalDebt: sum of consolidated balance-sheet borrowings (specifically (Non-current borrowings) + (Current borrowings) + (Non-current lease liabilities) + (Current lease liabilities) + (Current maturities of long-term debt, if shown separately)). Do NOT extract only lease liabilities when borrowings are present.
+- netWorth: total equity attributable to shareholders/owners of the parent (must include BOTH Share Capital / Equity Share Capital AND Reserves & Surplus, but exclude non-controlling interest/minority interest).
+- currentLiabilities: total current liabilities from the consolidated balance sheet.
+- exceptionalItems: the net amount of exceptional or extraordinary items during the year, in ₹ Crores. Must be extracted ONLY from a specific line labeled "Exceptional Items" or "Extraordinary Items" in the P&L. If no such line exists, set this to null. DO NOT confuse PBT (e.g. ₹37,608 Cr) or ordinary tax items with exceptional items.
+- auditorOpinion: EXACTLY one of "Clean","Qualified","Adverse","Disclaimer". Keep qualitative fields concise.
 
-CRITICAL RULE 1e — TOTAL DEBT EXTRACTION: For totalDebt, sum the consolidated balance-sheet's BORROWINGS line items — specifically (Non-current borrowings) + (Current borrowings) + (Current maturities of long-term debt, if shown separately). Use the CONSOLIDATED balance sheet TOTALS, not a sub-line inside a note schedule (e.g. a single subsidiary's debt, a "lease liabilities" sub-line, or a single instrument total). If you see a suspiciously small number like ₹25 Cr or ₹100 Cr for a large listed company, you have read a sub-line — go back to the main balance sheet and find the borrowings totals. Sanity check: for a profitable mid/large-cap, totalDebt as a fraction of netWorth should rarely be below 0.001x — if it is, recheck the source line.
+CRITICAL RULE 1e — TOTAL DEBT EXTRACTION: For totalDebt, sum the consolidated balance-sheet's BORROWINGS and LEASE LIABILITIES line items. Specifically:
+  (Non-current Borrowings) + (Current Borrowings) + (Non-current Lease Liabilities) + (Current Lease Liabilities) + (Current maturities of long-term debt, if shown separately).
+Use the CONSOLIDATED balance sheet lines directly. Do NOT extract from a sub-note details schedule unless the balance sheet does not separate borrowings/lease liabilities. Many companies (e.g., Infosys, Sun Pharma) have both borrowings and lease liabilities; you must include BOTH in the totalDebt figure. For IT sector, totalDebt MUST include both traditional borrowings and IFRS-16 lease liabilities. Do NOT overlook traditional borrowings.
+
+CRITICAL GENERAL RULE — WORKING CAPITAL EXTRACTION: Always extract Trade Receivables (debtors), Inventories (stock), and Depreciation from the consolidated financial statements or notes for all years. These are required to compute working capital ratios and ROCE. If they are listed, they must be extracted.
+
+CRITICAL RELATED PARTY RULE — From the "Related Party Disclosures" note fill relatedPartyDetails: one row per material commercial transaction (Sale, Purchase, Loans given/taken, Guarantees, Remuneration, etc.) during the target year, in ₹ Crores. Do NOT extract CSR spend or foundation donations (e.g. CSR contribution of Rs 408 Cr to Infosys Foundation) as the primary commercial related-party transactions. Double check that the year of the transaction matches the target fiscal year (do not mix FY24 and FY23). Make sure the total relatedPartyTransactions equals the sum of these detailed transactions. Quotes in citations must match the numerical value of the transaction.
 
 QUALITATIVE NARRATIVE FIELDS (extract from the Management Discussion & Analysis, the Board's/Directors' Report and the business-overview pages — NOT the audited numbers):
 - businessOverview: 2–4 sentences in plain English on WHAT THE COMPANY DOES — its core business, main products/services, key segments or divisions, and how it makes money. Neutral and factual (e.g. "ICICI Bank is a private-sector bank offering retail and corporate banking, with subsidiaries in life and general insurance, asset management and securities."). Do NOT copy marketing language; summarise.

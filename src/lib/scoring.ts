@@ -105,6 +105,72 @@ export function normalizeUnitsAcrossYears(
 }
 
 /**
+ * Cross-year individual field normaliser.
+ * Catches cases where a single field (like netWorth) was scaled incorrectly by the model,
+ * leaving other fields in the same year correct.
+ */
+function normalizeIndividualFieldsAcrossYears(
+  rows: FinancialData[],
+): { data: FinancialData[]; notes: string[] } {
+  const notes: string[] = [];
+  if (!rows || rows.length < 3) return { data: rows || [], notes };
+
+  const fieldsToCompare: (keyof FinancialData)[] = [
+    'netWorth', 'revenue', 'totalDebt', 'pat', 'totalAssets', 'operatingCashFlow',
+  ];
+
+  const data = rows.map(r => ({ ...r }));
+
+  for (const field of fieldsToCompare) {
+    for (let i = 0; i < data.length; i++) {
+      const val = data[i][field];
+      if (typeof val !== 'number' || val === 0 || val == null) continue;
+
+      // Get values for this field in other years
+      const otherVals: number[] = [];
+      for (let j = 0; j < data.length; j++) {
+        if (i === j) continue;
+        const oVal = data[j][field];
+        if (typeof oVal === 'number' && oVal !== 0 && oVal != null) {
+          otherVals.push(oVal);
+        }
+      }
+
+      if (otherVals.length < 2) continue;
+
+      // Check if other years are relatively stable (within a factor of 2.5)
+      const maxOther = Math.max(...otherVals);
+      const minOther = Math.min(...otherVals);
+      if (minOther <= 0 || maxOther / minOther > 2.5) continue;
+
+      const avgOther = otherVals.reduce((a, b) => a + b, 0) / otherVals.length;
+      const ratio = avgOther / val;
+
+      let factor = 1;
+      if (Math.abs(ratio - 10) / 10 <= 0.40) {
+        factor = 10;
+      } else if (Math.abs(ratio - 100) / 100 <= 0.40) {
+        factor = 100;
+      } else if (Math.abs(ratio - 0.1) / 0.1 <= 0.40) {
+        factor = 0.1;
+      } else if (Math.abs(ratio - 0.01) / 0.01 <= 0.40) {
+        factor = 0.01;
+      }
+
+      if (factor !== 1) {
+        const newVal = val * factor;
+        (data[i] as any)[field] = newVal;
+        notes.push(
+          `FY${data[i].year} ${field} (extracted as ${val}) was auto-corrected to ${newVal.toFixed(0)} (scaled ×${factor}) to match other years.`
+        );
+      }
+    }
+  }
+
+  return { data, notes };
+}
+
+/**
  * Score a full multi-year set. Prefer this over calling scoreCompany() per year:
  * it first reconciles cross-year unit errors, then scores oldest→newest so each
  * year sees the correct prior-year context. Any auto-scaling is prepended to that
@@ -112,12 +178,18 @@ export function normalizeUnitsAcrossYears(
  */
 export function scoreAll(rows: FinancialData[]): ScoredData[] {
   if (!rows || rows.length === 0) return [];
-  const { data, notes } = normalizeUnitsAcrossYears(rows);
+  const { data: normalizedData, notes: yearNotes } = normalizeUnitsAcrossYears(rows);
+  const { data, notes: fieldNotes } = normalizeIndividualFieldsAcrossYears(normalizedData);
   const sorted = [...data].sort((x, y) => x.year - y.year);
   return sorted.map((d, i) => {
     const scored = scoreCompany(d, i > 0 ? sorted[i - 1] : null);
-    const note = notes[d.year];
-    if (note) scored.flags = [note, ...scored.flags];
+    const yearNote = yearNotes[d.year];
+    if (yearNote) scored.flags = [yearNote, ...scored.flags];
+    fieldNotes.forEach(fn => {
+      if (fn.startsWith(`FY${d.year} `)) {
+        scored.flags = [fn, ...scored.flags];
+      }
+    });
     return scored;
   });
 }
@@ -261,7 +333,9 @@ export function scoreCompany(data: FinancialData, prevData?: FinancialData | nul
   if (!isFinancial) {
     const dep = data.depreciation ?? null;
     const ebit = (ebitda != null && dep != null) ? ebitda - dep : null;
-    const capitalEmployed = (netWorth != null && totalDebt != null) ? netWorth + totalDebt : netWorth;
+    const capitalEmployed = (data.totalAssets != null && data.currentLiabilities != null)
+      ? data.totalAssets - data.currentLiabilities
+      : ((netWorth != null && totalDebt != null) ? netWorth + totalDebt : netWorth);
     if (ebit != null && capitalEmployed && capitalEmployed > 0) {
       const roce = (ebit / capitalEmployed) * 100;
       ratios['ROCE %'] = roce;
@@ -314,7 +388,13 @@ export function scoreCompany(data: FinancialData, prevData?: FinancialData | nul
     if      (pledge > 50) { score -= 12; flags.push(`High promoter pledge: ${pledge.toFixed(1)}%`); }
     else if (pledge > 25) { score -= 6;  flags.push(`Elevated promoter pledge: ${pledge.toFixed(1)}%`); }
   }
-  if (data.hasGoingConcern) { score -= 20; flags.push('⚠️ Going concern risk raised by auditors'); }
+  // Check for internal contradiction on going concern (false positive override)
+  let hasGoingConcern = data.hasGoingConcern ?? false;
+  if (hasGoingConcern && isCleanOpinion(data.auditorOpinion) && pat != null && pat > 0) {
+    hasGoingConcern = false;
+    data.hasGoingConcern = false;
+  }
+  if (hasGoingConcern) { score -= 20; flags.push('⚠️ Going concern risk raised by auditors'); }
   if (data.auditorOpinion && !isCleanOpinion(data.auditorOpinion)) { score -= 15; flags.push(`Audit opinion: ${data.auditorOpinion}`); }
   if (data.auditorChangedThisYear) { score -= 4; flags.push('Auditor changed this year — governance watch'); }
 

@@ -105,6 +105,34 @@ export default function Dashboard({ data, fileUrls, userApiKey }: Props) {
   const latest = data[data.length - 1];
   // EBITDA is not a meaningful line for banks/NBFCs — hide it from KPIs and charts.
   const isFinancial = latest.sector === 'Banking' || latest.sector === 'NBFC' || latest.sector === 'Insurance';
+  const isBankOrNbfc = latest.sector === 'Banking' || latest.sector === 'NBFC';
+
+  const pnlRows: StmtRow[] = [
+    { label: isBankOrNbfc ? 'Total Income' : 'Revenue / Total Income', key: 'revenue' },
+    ...(isBankOrNbfc ? [{ label: 'Interest Earned (Revenue)', key: 'interestIncome' as keyof ScoredData }] : []),
+    { label: 'EBITDA', key: 'ebitda' },
+    { label: 'Depreciation & Amortisation', key: 'depreciation' },
+    { label: 'Exceptional Items', key: 'exceptionalItems' },
+    { label: 'Profit After Tax', key: 'pat' },
+    { label: 'EPS (₹/share)', key: 'eps', kind: 'eps' },
+    { label: 'Diluted EPS (₹/share)', key: 'dilutedEps', kind: 'eps' },
+    { label: 'Dividend Paid', key: 'dividendPaid' },
+  ];
+
+  const bsRows: StmtRow[] = [
+    { label: 'Total Assets', key: 'totalAssets' },
+    { label: 'Current Liabilities', key: 'currentLiabilities' as keyof ScoredData },
+    { label: 'Net Worth', key: 'netWorth' },
+    { label: 'Total Debt', key: 'totalDebt' },
+    { label: 'Net Debt', key: 'netDebt' },
+    { label: 'Cash & Equivalents', key: 'cashEquivalents' },
+    { label: 'Advances', key: 'advances' },
+    { label: 'Deposits', key: 'deposits' },
+    { label: 'AUM', key: 'aum' },
+    { label: 'Trade Receivables', key: 'tradeReceivables' },
+    { label: 'Inventories', key: 'inventories' },
+    { label: 'Goodwill', key: 'goodwill' },
+  ];
 
   const handleExportDocx = async () => {
     try { setExporting(true); await downloadReportDocx(data); }
@@ -273,9 +301,22 @@ export default function Dashboard({ data, fileUrls, userApiKey }: Props) {
       {/* FINANCIAL STATEMENTS */}
       {tab === 'statements' && (
         <div>
-          <StatementTable title="Profit &amp; Loss" rows={PNL_ROWS} data={data} isFinancial={isFinancial} />
+          <StatementTable title="Profit &amp; Loss" rows={pnlRows} data={data} isFinancial={isFinancial} />
           <StatementTable title="Cash Flow" rows={CF_ROWS} data={data} isFinancial={isFinancial} />
-          <StatementTable title="Balance Sheet — Key Items" rows={BS_ROWS} data={data} isFinancial={isFinancial} />
+          <StatementTable title="Balance Sheet — Key Items" rows={bsRows} data={data} isFinancial={isFinancial} />
+
+          <div style={{ marginTop: 16, fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.6, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
+            <div style={{ fontWeight: 600, marginBottom: 4 }}>Methodology &amp; Alignment Notes:</div>
+            {latest.isConsolidated !== false && (
+              <div>• <strong>Profit After Tax (PAT):</strong> Attributable to parent shareholders (post-minority interest). This may run ~4-6% lower than total consolidated PAT on Screener (which includes minority interests).</div>
+            )}
+            <div>• <strong>Net Worth:</strong> Represents Equity Share Capital + Reserves &amp; Surplus attributable to parent shareholders. Minor variances from Screener arise from the inclusion/exclusion of non-controlling interest or revaluation reserves.</div>
+            {isBankOrNbfc && (
+              <div>• <strong>Total Income vs. Revenue:</strong> Under banking conventions, "Total Income" includes other income. Screener's "Revenue" metric is narrower (typically Interest Earned only). Both rows are displayed above.</div>
+            )}
+            <div>• <strong>Earnings Per Share (EPS):</strong> Extracted directly from audited consolidated annual reports as reported. Mismatches with Screener (e.g. 2x) typically arise from stock-split / face-value changes or post-merger share count adjustments.</div>
+            <div>• <strong>Fiscal Year Labels:</strong> Annual reports use March-ending fiscal years (e.g., FY2024 ends March 31, 2024). Some financial databases may experience a one-year labeling offset for certain metrics.</div>
+          </div>
         </div>
       )}
 

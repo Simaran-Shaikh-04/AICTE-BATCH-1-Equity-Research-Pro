@@ -55,6 +55,7 @@ export interface FinancialData {
 
   grossProfit?:        number | null;
   totalAssets?:        number | null;
+  currentLiabilities?: number | null;
   tradeReceivables?:   number | null;
   inventories?:        number | null;
   capex?:              number | null;

@@ -27,6 +27,7 @@ const FIN_ROWS: [string, keyof ScoredData, Unit][] = [
   ['Depreciation', 'depreciation', '₹ Cr'],
   ['Dividend Paid', 'dividendPaid', '₹ Cr'],
   ['Total Assets', 'totalAssets', '₹ Cr'],
+  ['Current Liabilities', 'currentLiabilities', '₹ Cr'],
   ['Trade Receivables', 'tradeReceivables', '₹ Cr'],
   ['Inventories', 'inventories', '₹ Cr'],
   ['Goodwill', 'goodwill', '₹ Cr'],
@@ -42,6 +43,7 @@ const FIN_ROWS: [string, keyof ScoredData, Unit][] = [
   ['AUM', 'aum', '₹ Cr'],
   ['Advances', 'advances', '₹ Cr'],
   ['Deposits', 'deposits', '₹ Cr'],
+  ['Interest Earned (Revenue)', 'interestIncome', '₹ Cr'],
   ['Net Interest Income', 'netInterestIncome', '₹ Cr'],
   ['Net Interest Margin', 'netInterestMargin', '%'],
   ['Gross NPA', 'grossNPA', '%'],
@@ -86,9 +88,23 @@ export function downloadReportXlsx(data: ScoredData[]): void {
   finAoa.push(['Sector', latest.sector, 'Generated', new Date().toISOString().slice(0, 10)]);
   finAoa.push([]);
   finAoa.push(['Metric', 'Unit', ...years]);
-  for (const [label, key, unit] of FIN_ROWS) {
+  for (const [orgLabel, key, unit] of FIN_ROWS) {
     if (!data.some(d => num(d[key] as number) != null)) continue;  // skip empty rows
+    let label = orgLabel;
+    if (key === 'revenue' && (latest.sector === 'Banking' || latest.sector === 'NBFC')) {
+      label = 'Total Income';
+    }
     finAoa.push([label, unit, ...data.map(d => num(d[key] as number))]);
+  }
+  if (latest.isConsolidated !== false) {
+    finAoa.push([]);
+    finAoa.push(['* Note: PAT is attributable to parent shareholders and may differ from Screener consolidated PAT by ~4-6%.']);
+    finAoa.push(['* Note: Net Worth represents Equity Share Capital + Reserves & Surplus attributable to parent.']);
+    if (latest.sector === 'Banking' || latest.sector === 'NBFC') {
+      finAoa.push(['* Note: "Total Income" includes other income. Screener\'s "Revenue" is typically Interest Earned only.']);
+    }
+    finAoa.push(['* Note: EPS is the basic consolidated EPS as printed in the annual reports.']);
+    finAoa.push(['* Note: Annual reports use March-ending fiscal years (e.g. FY2024 ends March 31, 2024).']);
   }
   finAoa.push([]);
   finAoa.push(['Scorecard']);
