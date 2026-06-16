@@ -45,6 +45,9 @@ This tool fixes all four problems in one platform.
 
 ## Screenshots
 
+### Setup — API Key Entry Screen
+![Setup Screen](screenshots/00_setup.png)
+
 ### Upload Panel — Sector Selection + 3-Year PDF Upload
 ![Upload Panel](screenshots/01_upload.png)
 
@@ -54,26 +57,29 @@ This tool fixes all four problems in one platform.
 ### Financial Statements Tab — P&L, Cash Flow, Balance Sheet
 ![Financial Statements](screenshots/03_financial_statements.png)
 
-### Ratio Analysis — Banking Sector (NIM, GNPA, CAR)
-![Ratios Banking](screenshots/04_ratios_banking.png)
-
-### MD&A Analysis with NarrativeDiff
-![MD&A NarrativeDiff](screenshots/05_mda_narrativediff.png)
-
-### Forensic Analysis — Flags, Trends, Governance
-![Forensic](screenshots/06_forensic.png)
-
 ### Related Parties + Contingent Liabilities
-![Related Parties](screenshots/07_related_parties.png)
+![Related Parties](screenshots/04_related_parties.png)
 
 ### YoY Changes — Governance & Key Risks Comparison
-![YoY Changes](screenshots/08_yoy_changes.png)
+![YoY Changes](screenshots/05_yoy_changes.png)
 
 ### Sources Tab — Page-Level Citations
-![Sources Citations](screenshots/09_sources.png)
+![Sources Citations](screenshots/06_sources.png)
+
+### Ratio Analysis — Sector-Specific Metrics
+![Ratios](screenshots/07_ratios.png)
+
+### MD&A Analysis — Raw Extraction View
+![MD&A Analysis](screenshots/08_mda_analysis.png)
+
+### MD&A Analysis — AI Summary View
+![MD&A AI Summary](screenshots/09_mda_ai_summary.png)
 
 ### AI Analyst Chat
 ![AI Analyst](screenshots/10_ai_analyst.png)
+
+### Forensic Analysis — Flags, Trends, Governance
+![Forensic](screenshots/11_forensic.png)
 
 ---
 
@@ -160,7 +166,7 @@ equity-research-pro/
 │   │   └── SetupPanel.tsx             # API key entry screen
 │   │
 │   ├── lib/                           # Business logic and utilities
-│   │   ├── scoring.ts                 # ⭐ 12 sector-specific scoring engines + ratio calculators
+│   │   ├── scoring.ts                 # ⭐ 17 sector-specific scoring engines + ratio calculators
 │   │   ├── types.ts                   # TypeScript interfaces for all data structures
 │   │   ├── reportDocx.ts              # Word document generator
 │   │   ├── reportXlsx.ts              # Excel workbook generator
