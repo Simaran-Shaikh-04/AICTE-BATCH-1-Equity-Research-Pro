@@ -205,7 +205,7 @@ equity-research-pro/
 
 > **⭐ Most important files for review:**
 > - `server.ts` — all Gemini extraction prompts live here
-> - `src/lib/scoring.ts` — all 12 sector scoring engines
+> - `src/lib/scoring.ts` — all 17 sector scoring engines
 > - `src/lib/types.ts` — data architecture
 > - `src/components/ForensicPanel.tsx` — forensic logic
 
@@ -263,7 +263,7 @@ docker run -p 7860:7860 -e GEMINI_API_KEY=your_key equity-research-pro
 ## Key Design Decisions
 
 **Why sector-specific scoring?**
-EBITDA margin means nothing for a bank. A bank's operational quality is captured by Net Interest Margin (how efficiently it lends), GNPA % (quality of its loan book), and Capital Adequacy Ratio (regulatory buffer). Applying manufacturing-sector ratios to banks produces scores that are technically wrong. Each of the 12 sector engines uses only the metrics relevant to that industry.
+EBITDA margin means nothing for a bank. A bank's operational quality is captured by Net Interest Margin (how efficiently it lends), GNPA % (quality of its loan book), and Capital Adequacy Ratio (regulatory buffer). Applying manufacturing-sector ratios to banks produces scores that are technically wrong. Each of the 17 sector engines uses only the metrics relevant to that industry.
 
 **Why page citations for every number?**
 AI extraction errors are real. A 400-page annual report contains thousands of numbers, and Gemini can sometimes pick the wrong table or fiscal year. Every extracted value is linked to its source page so analysts can verify any figure in 10 seconds before using it.
