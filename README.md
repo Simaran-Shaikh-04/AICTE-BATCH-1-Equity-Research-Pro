@@ -34,13 +34,12 @@ license: mit
 
 ## The Problem This Solves
 
-Equity research for Indian listed companies is:
-- **Manual** — analysts spend 10–15 hours extracting data from 400-page PDF annual reports
-- **Generic** — existing tools apply EBITDA logic to banks (EBITDA does not exist for banks)
-- **Incomplete** — forensic red flags (promoter pledging, RPT anomalies, auditor changes) are routinely missed
-- **Fragmented** — no single free tool combines PDF extraction + ratios + MD&A analysis + AI chat
+Financial platforms show you numbers but never tell you where they came from in the annual report or how they were calculated. This makes verification difficult and time-consuming.
 
-This tool fixes all four problems in one platform.
+**Equity Research Pro** solves this by linking every figure back to its exact source page in the annual report PDF so users can verify it themselves. Furthermore, it addresses major challenges in standard research:
+- **Manual Extraction:** Saves hours spent scanning 400-page reports.
+- **Generic Analysis:** Customizes analysis for specific sectors (e.g. traditional tools apply EBITDA logic to banks, where EBITDA is not a valid banking metric).
+- **Incomplete Checks:** Automates forensic scans for related party transactions, promoter pledging shifts, and auditor changes.
 
 ---
 
@@ -289,7 +288,7 @@ HDFC Bank FY2025 auditor change (M M Nissim & Co → Price Waterhouse LLP) was c
 
 ---
 
-## Internship Context
+## Development Story & Internship Context
 
 | Field | Details |
 |-------|---------|
@@ -300,7 +299,16 @@ HDFC Bank FY2025 auditor change (M M Nissim & Co → Price Waterhouse LLP) was c
 | Degree | BCom Financial Accounting (Year 3) |
 | Internship ID | INTERNSHIP_177546286369d369cf3ffb2 |
 
-**Role clarity:** I designed the financial logic — sector-specific scoring benchmarks, forensic accounting rules, ratio selection per sector, and validation methodology. Implementation code was generated with AI assistance. This distinction is reflected honestly in all documentation.
+### My Role & Product Ownership
+Throughout the internship, I owned the **product direction**: defining what problem to solve, how the app should work, and what a useful output looks like for someone trying to understand a company's financials from its annual report.
+
+### Financial Research & AI Guidance
+I went into this without a background in sector-specific financial analysis. That knowledge was acquired dynamically through the process of building:
+*   I used **Claude AI** to analyze real annual reports and conducted extensive research to understand what metrics actually matter for different industries.
+*   I learned how banks are analyzed differently from pharma companies, which are analyzed differently from FMCG, translating this logic into the scoring rules during development, not before it.
+
+### Technical Implementation
+With no prior coding background, the application was built using **Claude Code** and **AI-assisted development**. I guided the system from an early prototype to a full-stack React + Node.js + Docker application deployed on Hugging Face Spaces. The system has been verified and tested against real annual reports of **HDFC Bank** and **ICICI Bank** (FY2023–25).
 
 ---
 
