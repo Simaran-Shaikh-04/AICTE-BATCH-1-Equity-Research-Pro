@@ -1,0 +1,30 @@
+# Exclude node modules and build outputs
+node_modules/
+dist/
+build/
+.npm/
+
+# Exclude git repository files
+.git/
+.gitattributes
+.gitignore
+
+# Exclude secrets and local environment configs
+.env
+.env.*
+!.env.example
+
+# Exclude documentation and project assets not needed in container
+docs/
+screenshots/
+*.md
+LICENSE
+
+# Exclude IDE/editor configurations
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
