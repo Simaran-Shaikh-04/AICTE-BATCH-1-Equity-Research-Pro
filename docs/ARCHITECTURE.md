@@ -1,4 +1,4 @@
-# System Architecture — Indian Equity Research Assistant Pro
+# System Architecture — Equity Research Pro
 
 ## Overview
 

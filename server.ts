@@ -1,5 +1,5 @@
 /**
- * Indian Equity Research Assistant Pro — server (FINAL, all features)
+ * Equity Research Pro — server (FINAL, all features)
  * Token fixes (thinking off, output cap, optional page-trim) + extraction of
  * citations, related-party detail, and contingent-liability detail.
  *

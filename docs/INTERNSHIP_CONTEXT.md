@@ -1,7 +1,7 @@
 # Internship Context & Learnings
 
 ## Overview
-This project, **Indian Equity Research Assistant Pro**, was developed as part of the **Edunet Foundation × IBM SkillsBuild × AICTE AI Internship** program.
+This project, **Equity Research Pro**, was developed as part of the **Edunet Foundation × IBM SkillsBuild × AICTE AI Internship** program.
 
 *   **Student Name:** Simaran Shaikh
 *   **College:** Don Bosco College, Panjim, Goa

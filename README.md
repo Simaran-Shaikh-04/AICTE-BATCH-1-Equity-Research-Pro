@@ -1,5 +1,5 @@
 ---
-title: Indian Equity Research Assistant Pro
+title: Equity Research Pro
 emoji: 📊
 colorFrom: indigo
 colorTo: gray
@@ -8,7 +8,7 @@ app_port: 7860
 pinned: false
 ---
 
-# Indian Equity Research Assistant Pro
+# Equity Research Pro
 
 [![Live Demo](https://img.shields.io/badge/🚀%20Live%20Demo-Hugging%20Face-blue)](https://huggingface.co/spaces/LumoraX/equity-research-pro)
 [![Built with Gemini](https://img.shields.io/badge/AI-Gemini%202.5%20Flash-orange)](https://ai.google.dev/)
